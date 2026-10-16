@@ -1,0 +1,12 @@
+name = "tunnel-relay"
+main = "src/worker.ts"
+compatibility_date = "2026-10-01"
+
+# No logs of requests: observability stays off.
+[observability]
+enabled = false
+
+[vars]
+RELAY_NAME = "tunnel-relay-cloudflare"
+
+# Secret, set with: npx wrangler secret put ARKIV_API_KEY

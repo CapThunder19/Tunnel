@@ -1,0 +1,21 @@
+{
+  "name": "tunnel-relay",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/node.ts",
+    "dev:worker": "wrangler dev",
+    "deploy:worker": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4",
+    "tsx": "^4",
+    "typescript": "^5.6",
+    "vitest": "^3",
+    "wrangler": "^4"
+  }
+}
