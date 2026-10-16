@@ -1,0 +1,41 @@
+{
+  "name": "arkiv-tunnel",
+  "version": "0.1.0",
+  "description": "Arkiv access that works through firewalls and offline: quorum relay transport, offline-signed writes, certified copies.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@arkiv-network/sdk": "0.8.x",
+    "viem": "^2"
+  },
+  "devDependencies": {
+    "@arkiv-network/sdk": "0.8.1",
+    "@types/node": "^22",
+    "typescript": "^5.6",
+    "viem": "^2",
+    "vitest": "^3"
+  },
+  "keywords": [
+    "arkiv",
+    "censorship-resistance",
+    "viem",
+    "transport",
+    "offline"
+  ]
+}

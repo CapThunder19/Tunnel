@@ -1,0 +1,19 @@
+{
+  "name": "tunnel-monorepo",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "relay",
+    "app"
+  ],
+  "scripts": {
+    "build": "npm run build -w arkiv-tunnel",
+    "test": "npm test -w arkiv-tunnel",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
