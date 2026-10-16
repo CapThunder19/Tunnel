@@ -31,9 +31,14 @@ Environment: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.7, Node 24.19, Windows 11, 
   drains the budget for all of its users. Our JSON-RPC client (`packages/tunnel/src/rpc.ts`) has
   to special-case this body shape, reads `Retry-After`, and marks the relay `down` until then, so
   the pool rotates to another relay.
+- **What we did:** relays read an Arkiv Hub access key from a secret (`ARKIV_API_KEY`) and send it
+  upstream as `X-API-KEY`, as the Access Keys docs page describes. This also follows that page's
+  advice to keep the key out of the browser: users talk to relays, and only relays hold the key.
 - **Suggested fix:** return a JSON-RPC error object (with the same code on every gateway) inside the
-  429, document the cost model (what one query "costs" against `limit=10000`, and the window
-  length), and document how to send an API key, so relay operators can configure one.
+  429, and document the anonymous budget next to the RPC URL in the JSON-RPC docs: what one query
+  costs against `limit=10000`, the window length, and whether `eth_*` calls count against it. The
+  JSON-RPC "Querying data" page shows only the bare URL, and the key mechanism is documented on
+  a separate Access Keys page.
 
 ---
 
@@ -42,4 +47,5 @@ Environment: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.7, Node 24.19, Windows 11, 
 | What | Expected | Result |
 |---|---|---|
 | SDK queries over a custom viem transport (`createTransport`) | `client.select('*').where(eq(...)).fetch()` sends exactly one `arkiv_query` with `[queryString, { select, atBlock?, limit?, cursor? }]` | As expected. The transport can inject `atBlock` (hex) when the caller did not set it, and the SDK decodes the result unchanged. Covered by `packages/tunnel/test/transport.test.ts`. |
+| Historical read with `atBlock` (hex) on a narrow predicate, through 3 relays | Same canonical result from every honest relay at the same block | Worked: `$expiresAt > u64(head+1e6)`, `limit 3`, at block 662032 and 662036 returned identical hashes from two relays in under a second. A relay running with `--lie` produced a different hash and was out-voted. Reproduce with `scripts/smoke-read.ts`. |
 | `eth_blockNumber` on the public RPC while `arkiv_query` was rate limited | works | Worked (`0xa1869`) |
