@@ -73,6 +73,14 @@ describe('quorum reads', () => {
     expect(findTunnelError(err, NoHealthyRelayError)).toBeDefined()
   })
 
+  it('never pins below the block of a receipt it has seen (read-your-writes)', async () => {
+    const { net, pool, query } = setup({ 'https://r1': 'honest', 'https://r2': 'honest' })
+    await pool.request('eth_getTransactionReceipt', ['0x' + '01'.repeat(32)])
+    await query()
+    const q = net.calls.find((c) => c.method === 'arkiv_query')!
+    expect(BigInt(q.params[1].atBlock)).toBe(HEAD) // not HEAD - 2
+  })
+
   it('answers eth_chainId locally', async () => {
     const { net, client } = setup({ 'https://r1': 'honest' })
     expect(await client.getChainId()).toBe(tiramisu.id)

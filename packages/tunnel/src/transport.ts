@@ -54,6 +54,8 @@ export class RelayPool {
   private readonly opts: TunnelOptions
   private readonly listeners = new Set<(e: TunnelEvent) => void>()
   private pinned?: { block: bigint; at: number }
+  /** Highest block of a receipt we have seen: reads never pin below it (read-your-writes). */
+  private floor = 0n
   /** Cursors are bound to the block of the page that produced them. */
   private readonly cursorBlocks = new Map<string, bigint>()
 
@@ -142,8 +144,9 @@ export class RelayPool {
     const failures: { relay: string; error: string }[] = []
     for (const r of this.usable()) {
       try {
-        const result = await this.call(r, method, params)
+        const result: any = await this.call(r, method, params)
         this.setState(r, 'ok')
+        if (method === 'eth_getTransactionReceipt' && typeof result?.blockNumber === 'string') this.raiseFloor(BigInt(result.blockNumber))
         return result
       } catch (err) {
         if (err instanceof RpcResponseError) {
@@ -204,10 +207,15 @@ export class RelayPool {
     throw new NoHealthyRelayError('eth_sendRawTransaction', failed)
   }
 
-  /** Median head of up to three relays, minus a safety margin, cached briefly. */
+  /** Never pin reads below this block again (called for every receipt we see). */
+  raiseFloor(block: bigint): void {
+    if (block > this.floor) this.floor = block
+  }
+
+  /** Median head of up to three relays, minus a safety margin, cached briefly; never below the floor. */
   async pinBlock(): Promise<bigint> {
     const ttl = this.opts.pinTtlMs ?? 3000
-    if (this.pinned && Date.now() - this.pinned.at < ttl) return this.pinned.block
+    if (this.pinned && Date.now() - this.pinned.at < ttl && this.pinned.block >= this.floor) return this.pinned.block
 
     const heads: bigint[] = []
     const failures: { relay: string; error: string }[] = []
@@ -232,7 +240,8 @@ export class RelayPool {
     heads.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
     const median = heads[Math.floor((heads.length - 1) / 2)]
     const margin = this.opts.pinMargin ?? 2n
-    const block = median > margin ? median - margin : median
+    let block = median > margin ? median - margin : median
+    if (block < this.floor) block = this.floor
     this.pinned = { block, at: Date.now() }
     return block
   }

@@ -49,6 +49,8 @@ export function fakeNet(behaviours: Record<string, Behaviour>) {
     switch (req.method) {
       case 'eth_blockNumber':
         return ok('0x' + HEAD.toString(16))
+      case 'eth_getTransactionReceipt':
+        return ok({ transactionHash: req.params[0], blockNumber: '0x' + HEAD.toString(16), status: '0x1', logs: [] })
       case 'eth_chainId':
         return ok('0x7614d1')
       case 'arkiv_query': {
