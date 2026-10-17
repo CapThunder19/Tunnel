@@ -40,6 +40,27 @@ Environment: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.7, Node 24.19, Windows 11, 
   JSON-RPC "Querying data" page shows only the bare URL, and the key mechanism is documented on
   a separate Access Keys page.
 
+## 2. Unfunded wallet: "Execution error without revert data", with no mention of the balance
+
+- **Surface:** TypeScript SDK `createEntity` (wallet client) -> node `eth_estimateGas`
+- **Versions:** `@arkiv-network/sdk` 0.8.1, viem 2.57.7, Tiramisu, 2026-10-18
+- **Steps:** create a fresh key with zero GLM, then
+  ```ts
+  const wallet = createWalletClient({ chain: tiramisu, account, transport: http() }) // we used tunnel([...]); same result
+  await wallet.createEntity({ expires: ExpirationTime.fromDays(90), payload: jsonToPayload({ text: 'x' }),
+    contentType: 'application/json', attributes: { app: str('tunnel-demo') }, flags: { readonly: true } })
+  ```
+  (`scripts/smoke-write.ts` against an unfunded `PRIVATE_KEY`)
+- **Expected:** an error that says the account has no balance to pay for gas (`insufficient funds`).
+- **Actual:** the top-level error is `EntityMutationError: Transaction failed: Execution error without
+  revert data`. Four `cause` levels down, the node's message is `out of gas: gas required exceeds: 0`.
+  Neither mentions the balance. With a funded key, the same call (same params, same relays) succeeded
+  (tx `0x2c2d9d1f…`, 101,552 gas), which confirms the "out of gas" was the zero balance capping the
+  gas estimate at 0.
+- **Suggested fix:** in `sendArkivTransaction`, when the estimate fails, check
+  `getBalance(account)` and throw `InsufficientFundsError` with a faucet link if it is 0. Or forward
+  the inner `details` instead of replacing it with "Execution error without revert data".
+
 ---
 
 ## Tested paths that worked
@@ -48,4 +69,5 @@ Environment: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.7, Node 24.19, Windows 11, 
 |---|---|---|
 | SDK queries over a custom viem transport (`createTransport`) | `client.select('*').where(eq(...)).fetch()` sends exactly one `arkiv_query` with `[queryString, { select, atBlock?, limit?, cursor? }]` | As expected. The transport can inject `atBlock` (hex) when the caller did not set it, and the SDK decodes the result unchanged. Covered by `packages/tunnel/test/transport.test.ts`. |
 | Historical read with `atBlock` (hex) on a narrow predicate, through 3 relays | Same canonical result from every honest relay at the same block | Worked: `$expiresAt > u64(head+1e6)`, `limit 3`, at block 662032 and 662036 returned identical hashes from two relays in under a second. A relay running with `--lie` produced a different hash and was out-voted. Reproduce with `scripts/smoke-read.ts`. |
+| Offline signing with the SDK (`signOffline` in `packages/tunnel/src/offline.ts`) | `createEntity` can produce a signed tx through a transport with no network | Worked. With `txParams = { nonce, gas, maxFeePerGas, maxPriorityFeePerGas }`, `createEntity` makes exactly 3 RPC calls: `eth_blockNumber` (only to sanity-check the expiry), `eth_fillTransaction` (viem 2.57 tries it first and falls back when it errors), and `eth_sendRawTransaction`. Without txParams it also calls `eth_getTransactionCount`. The `eth_chainId` call is skipped because the chain is set. We answer `eth_blockNumber` locally with `0x1`, because `ExpirationTime.fromDays(n)` goes on the wire as `{ expiresAt: 0, minLifetime: n days in blocks }`, counted from the block the tx lands in. So an offline-signed notice lives the full n days from whenever it is carried. Absolute expiries (`atBlock`/`atDate`) would need the real head, so we refuse them offline. A nice property of the wire format; it deserves a line in the docs. |
 | `eth_blockNumber` on the public RPC while `arkiv_query` was rate limited | works | Worked (`0xa1869`) |

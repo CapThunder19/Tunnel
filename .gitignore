@@ -10,3 +10,4 @@ stamps*.json
 !examples/*.tunnel
 .DS_Store
 coverage/
+notice.tnl.txt
