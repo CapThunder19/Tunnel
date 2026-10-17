@@ -1,0 +1,193 @@
+{
+ "format": "tunnel-certified-copy/v1",
+ "snapshot": {
+  "chainId": 7738577,
+  "query": "app = str('tunnel-demo') AND type = str('notice')",
+  "select": {
+   "key": true,
+   "owner": true,
+   "creator": true,
+   "createdAt": true,
+   "updatedAt": true,
+   "expiresAt": true,
+   "creationFlags": true,
+   "contentType": true,
+   "payload": true,
+   "attributes": true
+  },
+  "block": "708671",
+  "blockTime": 1792267108,
+  "entities": [
+   {
+    "key": "0x5c3b7e778007fe28aacf861a2336f57ce71aa582db6b7141a6d39291666f29f4",
+    "owner": "0x7fa8b37b86170f6164eb2f6e4e80dfbf43d16153",
+    "creator": "0x7fa8b37b86170f6164eb2f6e4e80dfbf43d16153",
+    "createdAt": "0xacc05",
+    "updatedAt": "0xacc05",
+    "expiresAt": "0x461f85",
+    "creationFlags": {
+     "readonly": true,
+     "permissionlessExtension": false,
+     "raw": 1
+    },
+    "contentType": "application/json",
+    "payload": "0x7b2274657874223a22427269646765206f6e206e6f72746820726f616420636c6f7365643b207573652074686520726976657220706174682e222c226469737472696374223a2265617374227d",
+    "attributes": [
+     {
+      "name": "app",
+      "type": "str",
+      "value": "tunnel-demo"
+     },
+     {
+      "name": "district",
+      "type": "str",
+      "value": "east"
+     },
+     {
+      "name": "ts",
+      "type": "u64",
+      "value": "0x6ad3cae8"
+     },
+     {
+      "name": "type",
+      "type": "str",
+      "value": "notice"
+     }
+    ]
+   },
+   {
+    "key": "0xaff2787c4c50f35b994a7f31cac2c9a44109884e3659ad07ddf8bce297216e3e",
+    "owner": "0xc540e63e94fa1ab03b8d1a8ddd1fc2847a83d996",
+    "creator": "0xc540e63e94fa1ab03b8d1a8ddd1fc2847a83d996",
+    "createdAt": "0xacbe5",
+    "updatedAt": "0xacbe5",
+    "expiresAt": "0x461f65",
+    "creationFlags": {
+     "readonly": true,
+     "permissionlessExtension": false,
+     "raw": 1
+    },
+    "contentType": "application/json",
+    "payload": "0x7b2274657874223a22436c696e696320696e2065617374206469737472696374206f70656e20756e74696c203820706d2e204272696e672077617465722e222c226469737472696374223a2265617374227d",
+    "attributes": [
+     {
+      "name": "app",
+      "type": "str",
+      "value": "tunnel-demo"
+     },
+     {
+      "name": "district",
+      "type": "str",
+      "value": "east"
+     },
+     {
+      "name": "ts",
+      "type": "u64",
+      "value": "0x6ad3caa8"
+     },
+     {
+      "name": "type",
+      "type": "str",
+      "value": "notice"
+     }
+    ]
+   },
+   {
+    "key": "0x398a7f0c9e7e98f0e30c46772fff19e940909a8186e5cb801eec19f409f658ea",
+    "owner": "0x455a064eb69b064124bce89f677ce89d50b92911",
+    "creator": "0x455a064eb69b064124bce89f677ce89d50b92911",
+    "createdAt": "0xacbc5",
+    "updatedAt": "0xacbc5",
+    "expiresAt": "0x461f45",
+    "creationFlags": {
+     "readonly": true,
+     "permissionlessExtension": false,
+     "raw": 1
+    },
+    "contentType": "application/json",
+    "payload": "0x7b2274657874223a22536d6f6b6520746573743a206e6f74696365207772697474656e207468726f7567682054756e6e656c2072656c6179732e222c226469737472696374223a2263656e7472616c227d",
+    "attributes": [
+     {
+      "name": "app",
+      "type": "str",
+      "value": "tunnel-demo"
+     },
+     {
+      "name": "district",
+      "type": "str",
+      "value": "central"
+     },
+     {
+      "name": "ts",
+      "type": "u64",
+      "value": "0x6ad3ca6b"
+     },
+     {
+      "name": "type",
+      "type": "str",
+      "value": "notice"
+     }
+    ]
+   },
+   {
+    "key": "0xa66106364501d002254fb758bd2caba10b8e880cd3ed0410363278906c82842f",
+    "owner": "0x455a064eb69b064124bce89f677ce89d50b92911",
+    "creator": "0x455a064eb69b064124bce89f677ce89d50b92911",
+    "createdAt": "0xacbaa",
+    "updatedAt": "0xacbaa",
+    "expiresAt": "0x461f2a",
+    "creationFlags": {
+     "readonly": true,
+     "permissionlessExtension": false,
+     "raw": 1
+    },
+    "contentType": "application/json",
+    "payload": "0x7b2274657874223a22536d6f6b6520746573743a206e6f74696365207772697474656e207468726f7567682054756e6e656c2072656c6179732e222c226469737472696374223a2263656e7472616c227d",
+    "attributes": [
+     {
+      "name": "app",
+      "type": "str",
+      "value": "tunnel-demo"
+     },
+     {
+      "name": "district",
+      "type": "str",
+      "value": "central"
+     },
+     {
+      "name": "ts",
+      "type": "u64",
+      "value": "0x6ad3ca33"
+     },
+     {
+      "name": "type",
+      "type": "str",
+      "value": "notice"
+     }
+    ]
+   }
+  ],
+  "queryHash": "0x8982ef9661758c1e12ace591a3bcab1707a29d9fbaa63e6c1b44bf5e644e521b",
+  "hash": "0x6b6d33834557c48a9ec6f99e7d6c6304273212c5bf0e58382d1fec7b8fa11812"
+ },
+ "attestations": [
+  {
+   "witness": "0x455a064eB69b064124bcE89f677Ce89d50B92911",
+   "signature": "0xc1d85f0efefbeb9fc2ffdd619c3d547a6ea3dc8ec94c6ce06f0f273bdcf54bb574e7fb2b6e8eff23e0a91e8de08e34e01db4c341bd63d56c1f68b5d990f7edc51c",
+   "entityKey": "0xf453b36f570e0a47166825ce9dce4dde9d384c303a534a81e938c4859522dc59",
+   "txHash": "0xea60869d2b24b35f361e7db01d3b8c3611f8f575426a4840a6ba41628fd02b5f"
+  },
+  {
+   "witness": "0x1cE965551F79Cd92F5a1132746DdBEC9EFDcF3f0",
+   "signature": "0xb584083139a0446caa0649746a67d05321463a9f480493f283f3ee45839c12c612bf44ffc01c2c9eddaccf25db2e2e0bd52476a711f3a9ac6f322675bb2bba421c",
+   "entityKey": "0x2490e3f3b7195303b1782479402b1a4f8e4f445336cace4be583841be488a5b4",
+   "txHash": "0x29c185a905c00795bc149d20e35c24eb5975bf8189f66c70b87683d41eb569c9"
+  },
+  {
+   "witness": "0x699F9c5e20dE345256D5bF865078B9f5249d934a",
+   "signature": "0xe875af722827536d729e81c070edfa4836b41982ce85d9ab7422be1aec3d90753564a7dd1028ec179afb3d130742facc87c60483e8f36f046df4359139ef4d651c",
+   "entityKey": "0x23e80768cc7543b712625de3f88d893931d95a1a2958f0df2d3a2509690a5d4f",
+   "txHash": "0x52e3a781ba8f1653ef4c8faaec94aaf170327b35d00fef882b6b0cb44a1b8aac"
+  }
+ ]
+}

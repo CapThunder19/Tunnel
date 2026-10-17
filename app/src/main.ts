@@ -4,6 +4,7 @@ import { activeRelays, LIAR_RELAY, settings } from './net'
 import { carryTab } from './tabs/carry'
 import { offlineTab } from './tabs/offline'
 import { readTab } from './tabs/read'
+import { verifyTab } from './tabs/verify'
 import { writeTab } from './tabs/write'
 
 const tabs = [
@@ -11,6 +12,7 @@ const tabs = [
   { id: 'write', label: 'Write', make: writeTab },
   { id: 'offline', label: 'Offline write', make: offlineTab },
   { id: 'carry', label: 'Carry', make: carryTab },
+  { id: 'verify', label: 'Verify copy', make: verifyTab },
 ]
 
 const views = new Map<string, HTMLElement>()
@@ -82,6 +84,10 @@ document.querySelector('#app')!.replaceChildren(
     {},
     'Tiramisu testnet · ',
     h('a', { href: 'https://github.com/CapThunder19/Tunnel', target: '_blank', rel: 'noopener' }, 'source (MIT)'),
+    ' · ',
+    h('a', { href: './verify.html' }, 'standalone offline verifier'),
+    ' · ',
+    h('a', { href: './examples/notices.tunnel', download: 'notices.tunnel' }, 'sample certified copy'),
   ),
 )
 show(location.hash.slice(1))

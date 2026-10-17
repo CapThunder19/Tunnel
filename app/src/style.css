@@ -105,3 +105,10 @@ footer { margin: 32px 0 8px; color: var(--muted); font-size: 13px; }
 @media (max-width: 560px) {
   .relays th:nth-child(4), .relays td:nth-child(4) { display: none; }
 }
+
+.drop { border: 2px dashed var(--line); border-radius: 12px; padding: 28px 16px; text-align: center; color: var(--muted); margin: 12px 0; }
+.drop.over { border-color: var(--accent); background: var(--surface); }
+.verdict { border-radius: 12px; padding: 14px 16px; margin: 12px 0; font-size: 16px; }
+.verdict p { margin: 4px 0 0; font-size: 14px; }
+.verdict.ok { background: var(--ok-bg); color: var(--ok); }
+.verdict.bad { background: var(--bad-bg); color: var(--bad); }

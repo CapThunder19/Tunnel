@@ -8,6 +8,8 @@ dist/
 stamps*.json
 *.tunnel
 !examples/*.tunnel
+!app/public/examples/*.tunnel
 .DS_Store
 coverage/
 notice.tnl.txt
+witnesses.local.json
