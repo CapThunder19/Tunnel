@@ -22,3 +22,6 @@ export {
   TEXT_PREFIX,
 } from './offline.js'
 export type { Stamp, SignOfflineOptions, InspectedTx, InspectedCreate } from './offline.js'
+export { takeSnapshot, attest, makeBundle, SELECT_ALL } from './snapshot.js'
+export { verifyOffline, attestationMessage, BUNDLE_FORMAT } from './verify.js'
+export type { Snapshot, Attestation, Bundle, VerifyResult, WitnessResult } from './verify.js'
