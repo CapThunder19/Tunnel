@@ -2,6 +2,8 @@
 
 > Arkiv access that works through firewalls and offline.
 
+**Live app:** https://tunnel-app-three.vercel.app · **Offline verifier:** https://tunnel-app-three.vercel.app/verify.html (save it, open from disk) · **Sample certified copy:** [examples/notices.tunnel](examples/notices.tunnel)
+
 Work in progress for **Arkiv: Global Tour Stop (pre-Devcon 8)**. Tracks: Censorship Resistance, Open Source, Security.
 
 ## Layout
@@ -37,7 +39,7 @@ without being caught (clients compare several relays at the same pinned block).
 | Relay | Platform | Health |
 |---|---|---|
 | `https://tunnel-relay.tunnel-relay.workers.dev` | Cloudflare Workers | [/health](https://tunnel-relay.tunnel-relay.workers.dev/health) |
-| `https://<app>.vercel.app/api/rpc` | Vercel Edge Function ([api/rpc.ts](api/rpc.ts)) | `GET /api/rpc` |
+| `https://tunnel-app-three.vercel.app/api/rpc` | Vercel Edge Function ([api/rpc.ts](api/rpc.ts)) | [GET /api/rpc](https://tunnel-app-three.vercel.app/api/rpc) |
 | `https://tunnel-relay-liar.tunnel-relay.workers.dev` | Cloudflare Workers, **deliberately lying (`LIE=1`), demo only** | [/health](https://tunnel-relay-liar.tunnel-relay.workers.dev/health) |
 
 ### Run locally
