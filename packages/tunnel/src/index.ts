@@ -25,3 +25,5 @@ export type { Stamp, SignOfflineOptions, InspectedTx, InspectedCreate } from './
 export { takeSnapshot, attest, makeBundle, SELECT_ALL } from './snapshot.js'
 export { verifyOffline, attestationMessage, BUNDLE_FORMAT } from './verify.js'
 export type { Snapshot, Attestation, Bundle, VerifyResult, WitnessResult } from './verify.js'
+export { listRelays, renewLeases, RELAY_LEASE_HOURS } from './registry.js'
+export type { RelayEntry } from './registry.js'
