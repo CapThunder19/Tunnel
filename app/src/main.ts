@@ -4,6 +4,7 @@ import { activeRelays, LIAR_RELAY, settings } from './net'
 import { carryTab } from './tabs/carry'
 import { offlineTab } from './tabs/offline'
 import { readTab } from './tabs/read'
+import { relaysTab } from './tabs/relays'
 import { verifyTab } from './tabs/verify'
 import { writeTab } from './tabs/write'
 
@@ -13,6 +14,7 @@ const tabs = [
   { id: 'offline', label: 'Offline write', make: offlineTab },
   { id: 'carry', label: 'Carry', make: carryTab },
   { id: 'verify', label: 'Verify copy', make: verifyTab },
+  { id: 'relays', label: 'Relays', make: relaysTab },
 ]
 
 const views = new Map<string, HTMLElement>()
