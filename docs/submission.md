@@ -125,6 +125,14 @@ their own verifier from the spec. The verifier is a pure function plus a 59 KB H
      `permissionlessExtension`, so whoever relies on a copy can keep its evidence alive.
    - **`$creator`:** shown on every notice, recovered and shown to carriers before broadcast, and
      used to match attestations to witnesses (app/src/tabs/verify.ts).
+   - **Lifetime Extension as a lease:** each relay's `relay` entity lives 2 h. A Cloudflare cron
+     extends it hourly with `extendEntity`, only while the relay is healthy, so dead relays drop out
+     on their own
+     ([registry.ts](https://github.com/CapThunder19/Tunnel/blob/master/packages/tunnel/src/registry.ts),
+     [worker.ts](https://github.com/CapThunder19/Tunnel/blob/master/relay/src/worker.ts)).
+   - **WebSocket entity events:** the Relays tab uses `watchEntityEvents` over a WebSocket transport
+     with no `fromBlock`, so lease countdowns update live without a refresh loop
+     ([relays.ts](https://github.com/CapThunder19/Tunnel/blob/master/app/src/tabs/relays.ts)).
    - **SDK internals:** we run the real SDK through custom viem transports, for both quorum and
      offline signing.
 5. **Friction report:** https://github.com/CapThunder19/Tunnel/blob/master/arkiv/friction.md
@@ -135,6 +143,8 @@ their own verifier from the spec. The verifier is a pure function plus a 59 KB H
      stamps, the `$creator` of offline-signed notices.
    - `0x1cE965551F79Cd92F5a1132746DdBEC9EFDcF3f0` and `0x699F9c5e20dE345256D5bF865078B9f5249d934a`:
      witnesses #2 and #3 (`attestation` entities).
+   - `0x9Fb8276AA99d5778C7562E4A46A73536F3803164`: relay operator. Creates `relay` lease entities
+     and renews them hourly.
    - Browser demo keys created in the live app also write notices.
 7. **Schema:** https://github.com/CapThunder19/Tunnel/blob/master/arkiv/schema.md
 8. **How can judges reproduce?** See "Try it (judges: nothing to install)" in the README:
@@ -147,7 +157,7 @@ their own verifier from the spec. The verifier is a pure function plus a 59 KB H
    The exact query for the attestations of the sample copy is in `arkiv/schema.md`, as a curl
    command against the public RPC.
 9. **Pre-existing work:** None.
-10. **Arkiv surfaces used:** TypeScript SDK, Direct JSON-RPC, Docs, Hub (access key), Faucet, Block Explorer.
+10. **Arkiv surfaces used:** TypeScript SDK, Direct JSON-RPC, WebSocket events, Docs, Hub (access key), Faucet, Block Explorer.
 11. *(n/a)*
 12. **First Arkiv entity:** More than a day (we started on 16 Oct by reading the SDK source and building the transport against read queries; the first write landed on 18 Oct once the wallet was funded).
 13. **LLMs used:** Claude (Claude Code) as a coding assistant.

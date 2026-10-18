@@ -63,6 +63,7 @@ The rest of the library:
 | `takeSnapshot(client, query)` | Every page of a query at one block, plus the block time and canonical hash. |
 | `attest(snapshot, wallet, reader)` | Re-read independently, refuse if the hash differs, sign (EIP-191), and write an `attestation` entity. |
 | `verifyOffline(bundle, trusted)` | Pure function: recompute the hash, check the signatures, count trusted witnesses. |
+| `listRelays(client, operators)` / `renewLeases(operator, relays)` | Relay registry on Arkiv. Relays hold 2 h leases that the operator renews hourly with `extendEntity`, only while healthy, so dead relays drop out by themselves. Clients trust entries by `$creator`. |
 
 ## Architecture
 
@@ -102,6 +103,8 @@ The rest of the library:
    test GLM from the [faucet](https://hub.arkiv.network/faucet) (about 0.01 is plenty), then post a notice.
    In *Offline write*, fund a stamp, **turn Wi-Fi off**, sign a notice, then turn Wi-Fi on, paste the
    text into *Carry* and broadcast. On the explorer, `$creator` is the stamp.
+5. **Relays:** the *Relays* tab lists live relays from their `relay` entities on Arkiv, with lease
+   countdowns. They update live over a WebSocket subscription when the hourly cron renews them.
 
 ## Why Arkiv
 
@@ -111,7 +114,7 @@ Tunnel depends on three Arkiv properties. Without them it falls apart:
 |---|---|---|
 | `$creator` is set by the chain from the transaction signature and can never change | An offline-signed notice keeps its author whoever carries it, and verifiers trust attestations by `$creator`. A relay or carrier has no way to put its own name on someone else's data. | **Postgres / our own API:** authorship is whatever the server writes into a column, so the operator (or anyone who compromises it) can forge or reassign it. Offline submissions would need the server to vouch for them. |
 | **Queryable state at an exact block** (`arkiv_query` with `atBlock`) | Quorum reads: independent relays answer *the same question about the same state*, so honest answers are byte-identical after canonicalisation and a liar stands out. Certified copies name a block that any witness or judge can re-query later to reproduce the hash. | **Our own API / a subgraph:** there is no shared, pinned view to compare against, so two honest servers can differ because they are at different heights, and you cannot tell a liar from a laggard. A subgraph is also one operator's indexer. **IPFS:** content addressing proves a file is unchanged, but it cannot answer queries ("all notices in the east district"), and it does not say who published or when. |
-| Entity Expiration + Lifetime Extension + creation flags | Notices are `readonly` and live 90 days (signed offline, they still get 90 days from when they are carried, because the lifetime is relative to inclusion). Attestations are `readonly` + `permissionlessExtension` and live 30 days: nobody can rewrite one, but anyone relying on a certified copy can keep its attestations alive without asking the witness. | **Postgres:** "readonly" and "anyone may extend" are policies the operator can switch off. **IPFS:** pinning is not ownership, and unpinned data disappears silently. |
+| Entity Expiration + Lifetime Extension + creation flags | The relay list is a set of 2 h leases renewed hourly with `extendEntity` while each relay is healthy: the list keeps itself honest with no server, and a dead relay disappears without anyone deleting it. Notices are `readonly` and live 90 days (signed offline, they still get 90 days from when they are carried, because the lifetime is relative to inclusion). Attestations are `readonly` + `permissionlessExtension` and live 30 days: nobody can rewrite one, but anyone relying on a certified copy can keep its attestations alive without asking the witness. | **Postgres / our own API:** the relay list is a server someone must run (and can censor), and "readonly" and "anyone may extend" are policies the operator can switch off. **IPFS:** pinning is not ownership, and unpinned data disappears silently. |
 
 What deliberately stays **off** Arkiv: every private key (device, stamps, witnesses), the
 certified-copy files themselves (they must travel offline), signed transactions waiting to be
@@ -124,7 +127,11 @@ real personal data (all demo notices are synthetic). Details: [arkiv/schema.md](
   a connection. Certified copies can be verified offline, but they are only as fresh as their block.
 - **Relay domains can be blocked too.** The defence is many relays on platforms that are costly to
   block (blocking `*.workers.dev` or `*.vercel.app` breaks a large part of the web) and anyone being able
-  to run one (one file, one command). This repo does not yet include a relay registry; relay URLs are configured.
+  to run one (one file, one command), and the on-chain registry for finding new ones. To bootstrap,
+  you still need *one* reachable relay.
+- **The registry is only as good as your operator list.** A relay entity counts only if its `$creator`
+  is an operator you trust. The live Relays page subscribes over WebSocket straight to the Arkiv RPC,
+  so where that is blocked it falls back to the list read through relays, without live updates.
 - **Relays see users' IPs** (and the Arkiv node sees the relays'). Relays log nothing, but you
   have to trust that. Use several, run your own, or put Tor in front.
 - **Quorum assumes an honest majority among the relays you ask.** If all of them collude, they can
@@ -139,7 +146,7 @@ real personal data (all demo notices are synthetic). Details: [arkiv/schema.md](
 |---|---|
 | [packages/tunnel](packages/tunnel) (`arkiv-tunnel`) | Core library: [transport.ts](packages/tunnel/src/transport.ts), [canonical.ts](packages/tunnel/src/canonical.ts), [offline.ts](packages/tunnel/src/offline.ts), [snapshot.ts](packages/tunnel/src/snapshot.ts), [verify.ts](packages/tunnel/src/verify.ts) |
 | [relay/](relay) | Stateless relay: [core.ts](relay/src/core.ts) shared by the [Cloudflare Worker](relay/src/worker.ts), the [Node server](relay/src/node.ts) and the [Vercel Edge function](api/rpc.ts) |
-| [app/](app) | Demo notice board (Vite + TypeScript, static): Read, Write, Offline write, Carry, Verify copy |
+| [app/](app) | Demo notice board (Vite + TypeScript, static): Read, Write, Offline write, Carry, Verify copy, Relays |
 | [scripts/](scripts) | Live end-to-end scripts (write, offline, certify, verify) |
 | [arkiv/](arkiv) | [schema.md](arkiv/schema.md), [friction.md](arkiv/friction.md) |
 | [docs/](docs) | [demo.md](docs/demo.md) (video script), [submission.md](docs/submission.md) |
@@ -151,7 +158,7 @@ Requires Node 20+.
 ```sh
 npm install
 cp .env.example .env.local          # PRIVATE_KEY = a funded Tiramisu key; ARKIV_API_KEY optional
-npm test                            # 34 tests: library + relay
+npm test                            # 36 tests: library + relay
 npm run typecheck
 
 # three local relays (one lies), then the app on http://localhost:5173
@@ -190,6 +197,7 @@ Cloudflare Workers:
 cd relay
 npx wrangler login
 npx wrangler secret put ARKIV_API_KEY     # optional, from https://hub.arkiv.network/api-keys
+npx wrangler secret put OPERATOR_KEY      # optional: funded key that renews relay leases (cron, hourly)
 npx wrangler deploy                       # prints https://tunnel-relay.<you>.workers.dev
 # demo liar (optional): npx wrangler deploy --name tunnel-relay-liar --var LIE:1
 ```
@@ -208,6 +216,7 @@ Any machine: `npx tsx relay/src/node.ts --host 0.0.0.0 --port 8787`.
 | `0x7FA8B37b86170f6164EB2f6E4E80dfBf43D16153` | Stamp #2 (funded by the main wallet): `$creator` of a notice signed offline |
 | `0x1cE965551F79Cd92F5a1132746DdBEC9EFDcF3f0` | Witness #2: writes `attestation` entities for certified copies |
 | `0x699F9c5e20dE345256D5bF865078B9f5249d934a` | Witness #3: writes `attestation` entities for certified copies |
+| `0x9Fb8276AA99d5778C7562E4A46A73536F3803164` | Relay operator: creates `relay` lease entities and renews them hourly (Cloudflare cron) |
 
 Browser demo keys generated in the live app (by you or by judges) also create `notice` entities.
 
@@ -220,6 +229,9 @@ Browser demo keys generated in the live app (by you or by judges) also create `n
 | Attestation of [examples/notices.tunnel](examples/notices.tunnel) (block 708671) by the main wallet | [`0xea60869d…`](https://tiramisu.explorer.arkiv.network/tx/0xea60869d2b24b35f361e7db01d3b8c3611f8f575426a4840a6ba41628fd02b5f) |
 | … by witness #2 | [`0x29c185a9…`](https://tiramisu.explorer.arkiv.network/tx/0x29c185a905c00795bc149d20e35c24eb5975bf8189f66c70b87683d41eb569c9) |
 | … by witness #3 | [`0x52e3a781…`](https://tiramisu.explorer.arkiv.network/tx/0x52e3a781ba8f1653ef4c8faaec94aaf170327b35d00fef882b6b0cb44a1b8aac) |
+| Relay lease created (Cloudflare relay) | [`0xf9c76ada…`](https://tiramisu.explorer.arkiv.network/tx/0xf9c76adabb5fed9e6e5766893fe19eb614ea4ff04eec658babc6f8427d2274ff) |
+| Relay lease created (Vercel relay) | [`0x5a6ba68f…`](https://tiramisu.explorer.arkiv.network/tx/0x5a6ba68f3e99c0d3a55067c719c7f4c0f45cabdfbbb4e839e3a457c7a3405543) |
+| Lease renewed by the Worker's `scheduled()` handler (`extendEntity`) | [`0x276e6418…`](https://tiramisu.explorer.arkiv.network/tx/0x276e64182f8dcf8c6151dc941df8d0e4261e8f96e8a10a5cd451f2fd9ac2d467) |
 
 Reproduce from the command line:
 
@@ -231,6 +243,8 @@ npx tsx scripts/offline.ts sign "your text"    # works with networking disabled
 npx tsx scripts/offline.ts carry               # any machine: shows the author, broadcasts
 npx tsx scripts/certify.ts                     # snapshot all notices; 3 witnesses re-read, sign, attest
 npx tsx scripts/verify.ts examples/notices.tunnel   # offline check
+npx tsx scripts/registry.ts renew              # one lease round (what the Worker cron does hourly)
+npx tsx scripts/watch-relays.ts 60             # see renewals arrive over a WebSocket subscription
 ```
 
 ## License

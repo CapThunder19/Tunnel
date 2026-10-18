@@ -67,6 +67,15 @@ Environment: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.7, Node 24.19, Windows 11, 
   `getBalance(account)` and throw `InsufficientFundsError` with a faucet link if it is 0. Or forward
   the inner `details` instead of replacing it with "Execution error without revert data".
 
+## 3. Entity events carry only keys, so watching "my app's" entities means re-reading on every create chain-wide
+
+- **Surface:** `watchEntityEvents` (TypeScript SDK) over a WebSocket transport
+- **Versions:** `@arkiv-network/sdk` 0.8.1, viem 2.57.7, `wss://rpc.tiramisu.db-chain.testnet.arkiv.network`, 2026-10-18
+- **Steps:** `scripts/watch-relays.ts`. Subscribe with `createPublicClient({ transport: webSocket(wss) }).watchEntityEvents({ onEvent, onEntityCreated, onExpiryExtended })`, no `fromBlock`, for 70 s.
+- **Expected:** a way to subscribe only to entities matching a predicate (e.g. `app = str('tunnel') AND type = str('relay')`), or events that include the entity's attributes so the client can filter.
+- **Actual:** events carry `entityKey`, `owner`, `expiresAt` (and flags for creates), but no attributes. We received **80 entity events in 70 s** from the whole testnet. Renewals of entities we already know are fine (match by key). But to notice a *new* relay, the client has to re-run its query after every `EntityCreated` from anyone. We debounce it (4 s) in `app/src/tabs/relays.ts`; on mainnet volume this would be a query storm or a stale list.
+- **Suggested fix:** let `watchEntityEvents` take a query predicate that the node evaluates (`arkiv_subscribe(query)`), or add `attributes` to `EntityCreated` (or emit a hash of `app`/`type` as an indexed topic so `eth_subscribe` log filters can narrow it).
+
 ---
 
 ## Tested paths that worked
@@ -76,4 +85,6 @@ Environment: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.7, Node 24.19, Windows 11, 
 | SDK queries over a custom viem transport (`createTransport`) | `client.select('*').where(eq(...)).fetch()` sends exactly one `arkiv_query` with `[queryString, { select, atBlock?, limit?, cursor? }]` | As expected. The transport can inject `atBlock` (hex) when the caller did not set it, and the SDK decodes the result unchanged. Covered by `packages/tunnel/test/transport.test.ts`. |
 | Historical read with `atBlock` (hex) on a narrow predicate, through 3 relays | Same canonical result from every honest relay at the same block | Worked: `$expiresAt > u64(head+1e6)`, `limit 3`, at block 662032 and 662036 returned identical hashes from two relays in under a second. A relay running with `--lie` produced a different hash and was out-voted. Reproduce with `scripts/smoke-read.ts`. |
 | Offline signing with the SDK (`signOffline` in `packages/tunnel/src/offline.ts`) | `createEntity` can produce a signed tx through a transport with no network | Worked. With `txParams = { nonce, gas, maxFeePerGas, maxPriorityFeePerGas }`, `createEntity` makes exactly 3 RPC calls: `eth_blockNumber` (only to sanity-check the expiry), `eth_fillTransaction` (viem 2.57 tries it first and falls back when it errors), and `eth_sendRawTransaction`. Without txParams it also calls `eth_getTransactionCount`. The `eth_chainId` call is skipped because the chain is set. We answer `eth_blockNumber` locally with `0x1`, because `ExpirationTime.fromDays(n)` goes on the wire as `{ expiresAt: 0, minLifetime: n days in blocks }`, counted from the block the tx lands in. So an offline-signed notice lives the full n days from whenever it is carried. Absolute expiries (`atBlock`/`atDate`) would need the real head, so we refuse them offline. A nice property of the wire format; it deserves a line in the docs. |
+| Lifetime Extension as a lease (`extendEntity` with `ExpirationTime.fromHours(2)`) | Renewing an hour into a 2 h lease sets a later expiry and succeeds; renewing twice within a minute also succeeds | Worked: `scripts/registry.ts renew` created 2 `relay` entities, then a second run a minute later extended both (expiry moved later each time). The same code ran inside a Cloudflare Worker `scheduled()` handler (bundled SDK + viem, `wrangler dev --test-scheduled`) and extended both on chain. |
+| `watchEntityEvents` over WebSocket, no `fromBlock` | Real subscription; renewals arrive without polling | Worked: both `ExpiryExtended` events for our relays arrived within a few seconds of the txs (`scripts/watch-relays.ts`). See issue 3 for the filtering gap. |
 | `eth_blockNumber` on the public RPC while `arkiv_query` was rate limited | works | Worked (`0xa1869`) |

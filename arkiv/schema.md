@@ -3,8 +3,8 @@
 Network: Tiramisu testnet, chain ID `7738577`. SDK `@arkiv-network/sdk` 0.8.1.
 Everything below was checked against live entities on 2026-10-18 (block ~727,000).
 
-Tunnel has two entity types. `notice` is the demo app's data. `attestation` belongs to the
-library's certified-copy feature and works for any query, not only notices.
+Tunnel has three entity types. `notice` is the demo app's data. `attestation` (certified copies) and
+`relay` (the relay registry) belong to the library and work for any app.
 
 ## Entity types
 
@@ -46,6 +46,24 @@ records that here.
 | `queryhash` | `str`, `0x` sha256 | Which query was certified |
 | `hash` | `str`, `0x` sha256 | The canonical result hash. This is the lookup key: "who attested to this exact content?" |
 
+### `relay` (relay registry, a lease)
+
+| | |
+|---|---|
+| Written by | `renewLeases()` in [packages/tunnel/src/registry.ts](../packages/tunnel/src/registry.ts), run hourly by the Cloudflare Worker cron ([relay/src/worker.ts](../relay/src/worker.ts), `17 * * * *`) with the operator key held as a Worker secret |
+| Expiration | `ExpirationTime.fromHours(2)`: a **lease** |
+| Lifetime Extension | Every hour the operator health-checks each relay it vouches for and, **only if it is healthy** (and not a liar), calls `extendEntity(key, fromHours(2))`. A relay that dies is not renewed, its lease lapses within 2 h, and it drops out of every client's list. Nobody has to delete anything and there is no server to maintain |
+| Flags | none: only the operator (owner) may extend its own leases |
+| Payload | `application/json`, `{ url, region }` |
+| `$creator` | The relay operator. Clients count a relay entity only if `$creator` is in their trusted-operator list, so anyone can announce a relay but nobody can impersonate an operator |
+
+| Attribute | Type | Why it is an attribute |
+|---|---|---|
+| `app` | `str` = `tunnel` | Namespace |
+| `type` | `str` = `relay` | Entity type |
+| `url` | `str` | What clients connect to; also how the operator finds its existing lease to extend it |
+| `region` | `str` | Shown in the UI |
+
 ## Queries the app runs (exact strings, as `client.select(...).where(...).toString()` renders them)
 
 Every query goes through `tunnel()`, which pins `atBlock` to (median relay head − 2), never
@@ -59,6 +77,8 @@ canonical hashes differ, it asks the remaining relays and goes with the strict m
 | Q3 | Verify tab (online extra) | `app = str('tunnel') AND type = str('attestation') AND hash = str('0x6b6d3383…a11812')` | `select: { key, creator, expiresAt }`, `limit 50` |
 | Q4 | `scripts/smoke-write.ts`, `scripts/offline.ts` (read-back of one author's notices) | `app = str('tunnel-demo') AND type = str('notice') AND $creator = addr(0x455a064eB69b064124bcE89f677Ce89d50B92911)` | `select: *`, `limit 5` |
 | Q5 | `takeSnapshot()` / `attest()` (certified copy) | Q1, read through every cursor page | `select: all fields`, `limit 200` per page, **same explicit `atBlock` on every page** |
+| Q6 | Relays tab, `renewLeases()` | `app = str('tunnel') AND type = str('relay') AND $creator = addr(0x9Fb8276AA99d5778C7562E4A46A73536F3803164)` (with several operators: `… AND ($creator = addr(…) OR $creator = addr(…))`) | `select: { key, creator, expiresAt, attributes }`, `limit 200` |
+| W1 | Relays tab, live | `watchEntityEvents({ onExpiryExtended, onEntityCreated, onEntityDeleted })` over a **WebSocket** transport (`wss://rpc.tiramisu…`), no `fromBlock`, so it is a real subscription, not polling | Renewals of listed relays update the countdown in place; a new entity triggers a debounced re-read of Q6 |
 
 Try them yourself (no backend of ours involved):
 
@@ -78,5 +98,5 @@ creators `0x455a…2911`, `0x1cE9…F3f0` and `0x699F…934a`.
 | The certified copy itself (`.tunnel` file) | Travels as a file (USB stick, messaging, printout of the hash) | It has to work with no network. Arkiv stores only the witnesses' attestations, which are small and point at the hash |
 | Offline-signed transactions waiting to be carried | QR / file / SMS text | Until someone broadcasts them they are just signed bytes; nothing to store |
 | Relay operators' and users' IPs, request bodies | Nowhere: relays log nothing | Relays are only pipes |
-| Arkiv Hub access key | Relay secrets (Cloudflare / Vercel env) | The docs say to keep it out of the browser; users never see it |
+| Arkiv Hub access key, relay operator key | Relay secrets (Cloudflare / Vercel env) | The docs say to keep the Hub key out of the browser; users never see either key |
 | Any real personal data | Nowhere | All notices are synthetic demo text |
