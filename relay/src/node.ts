@@ -5,11 +5,22 @@
  *   npx tsx relay/src/node.ts --port 8787 --name local-a
  *   npx tsx relay/src/node.ts --port 8789 --name liar --lie     # DEMO ONLY: tampers query results
  *
- * Reads ARKIV_API_KEY and UPSTREAM from the environment.
+ * Reads ARKIV_API_KEY and UPSTREAM from the environment, or from the repo's .env.local.
  */
+import { existsSync, readFileSync } from 'node:fs'
 import { createServer } from 'node:http'
+import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { DEFAULT_UPSTREAM, handle } from './core.js'
+
+// Local demos: pick up ARKIV_API_KEY / UPSTREAM from the repo's .env.local (never printed).
+const envFile = resolve(import.meta.dirname, '..', '..', '.env.local')
+if (existsSync(envFile)) {
+  for (const line of readFileSync(envFile, 'utf8').split('\n')) {
+    const m = line.trim().match(/^(ARKIV_API_KEY|UPSTREAM)\s*=\s*(.*)$/)
+    if (m && m[2] && process.env[m[1]] === undefined) process.env[m[1]] = m[2].trim()
+  }
+}
 
 const { values } = parseArgs({
   options: {

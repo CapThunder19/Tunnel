@@ -27,6 +27,12 @@ Environment: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.7, Node 24.19, Windows 11, 
   has no `jsonrpc`, `id` or `error.code`. `eth_blockNumber` still succeeded at the same moment, so
   the budget applies to `arkiv_query` only. Because the budget was already exhausted before our
   first query, it seems to be keyed by IP (or a shared egress), not by client.
+- **Measured on 2026-10-18** (same `arkiv_query`, `limit 5`, `select {key}`): every response carries
+  `arkiv-cost: 100`. Anonymous responses carried `ratelimit: limit=600, remaining=599, reset=60`,
+  which works out to about **6 queries per minute per IP**. With an Access Key it was `limit=9999`
+  plus `arkiv-quota-used-percent: 1`. A wrong key returns `401 {"error":"INVALID_KEY"}`, again not
+  JSON-RPC shaped. So the anonymous limits differ between days (`10000/208s` on the 16th, `600/60s`
+  on the 18th), and none of this is on the JSON-RPC docs page.
 - **Impact on us:** a relay forwards every user's queries from one IP, so an anonymous relay
   drains the budget for all of its users. Our JSON-RPC client (`packages/tunnel/src/rpc.ts`) has
   to special-case this body shape, reads `Retry-After`, and marks the relay `down` until then, so
