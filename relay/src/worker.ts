@@ -5,6 +5,8 @@ export interface Env {
   ARKIV_API_KEY?: string
   RELAY_NAME?: string
   RELAY_REGION?: string
+  /** DEMO ONLY: "1" makes this deployment tamper with query results (deployed as tunnel-relay-liar). */
+  LIE?: string
 }
 
 export default {
@@ -16,6 +18,7 @@ export default {
       apiKey: env.ARKIV_API_KEY,
       name: env.RELAY_NAME ?? 'tunnel-relay-cloudflare',
       region: env.RELAY_REGION ?? (request as any).cf?.colo,
+      lie: env.LIE === '1',
     })
     return new Response(res.status === 204 ? null : res.body, { status: res.status, headers: res.headers })
   },
