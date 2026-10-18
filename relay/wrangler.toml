@@ -6,7 +6,12 @@ compatibility_date = "2026-10-01"
 [observability]
 enabled = false
 
+# Hourly lease renewal for the relay registry (see packages/tunnel/src/registry.ts).
+[triggers]
+crons = ["17 * * * *"]
+
 [vars]
 RELAY_NAME = "tunnel-relay-cloudflare"
+ANNOUNCE = "https://tunnel-relay.tunnel-relay.workers.dev|cloudflare,https://tunnel-app-three.vercel.app/api/rpc|vercel"
 
-# Secret, set with: npx wrangler secret put ARKIV_API_KEY
+# Secrets: npx wrangler secret put ARKIV_API_KEY ; npx wrangler secret put OPERATOR_KEY

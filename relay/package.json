@@ -17,5 +17,9 @@
     "typescript": "^5.6",
     "vitest": "^3",
     "wrangler": "^4"
+  },
+  "dependencies": {
+    "@arkiv-network/sdk": "0.8.1",
+    "viem": "^2"
   }
 }

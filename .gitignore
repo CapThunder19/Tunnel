@@ -13,3 +13,5 @@ stamps*.json
 coverage/
 notice.tnl.txt
 witnesses.local.json
+operator.local.json
+.dev.vars
