@@ -1,6 +1,6 @@
 import './style.css'
 import { h } from './dom'
-import { activeRelays, LIAR_RELAY, settings } from './net'
+import { activeRelays, LIAR_RELAY, onNetChange, settings } from './net'
 import { carryTab } from './tabs/carry'
 import { offlineTab } from './tabs/offline'
 import { readTab } from './tabs/read'
@@ -18,14 +18,17 @@ const tabs = [
 ]
 
 const views = new Map<string, HTMLElement>()
-const main = h('main')
-const nav = h('nav', { class: 'tabs' })
+const main = h('main', { id: 'workspace', tabindex: -1 })
+const nav = h('nav', { class: 'tabs', 'aria-label': 'Workspace' })
 
 function show(id: string) {
   const tab = tabs.find((t) => t.id === id) ?? tabs[0]
   if (!views.has(tab.id)) views.set(tab.id, tab.make())
   main.replaceChildren(views.get(tab.id)!)
-  for (const b of nav.querySelectorAll('button')) b.classList.toggle('active', b.dataset.id === tab.id)
+  for (const b of nav.querySelectorAll('button')) {
+    b.classList.toggle('active', b.dataset.id === tab.id)
+    b.setAttribute('aria-current', b.dataset.id === tab.id ? 'page' : 'false')
+  }
   if (location.hash !== `#${tab.id}`) history.replaceState(null, '', `#${tab.id}`)
 }
 
@@ -62,6 +65,7 @@ function connectionPanel(): HTMLElement {
   relays.addEventListener('change', save)
   liar.addEventListener('change', save)
   renderSummary()
+  onNetChange(renderSummary)
   return h(
     'details',
     { class: 'connection' },
@@ -73,11 +77,23 @@ function connectionPanel(): HTMLElement {
 }
 
 document.querySelector('#app')!.replaceChildren(
+  h('a', { class: 'skip-link', href: '#workspace' }, 'Skip to workspace'),
   h(
     'header',
     {},
-    h('div', {}, h('h1', {}, 'Tunnel'), h('p', { class: 'tagline' }, 'Arkiv access that works through firewalls and offline. A public notice board, synthetic data only.')),
+    h('div', { class: 'brand' },
+      h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, 't'),
+      h('div', {}, h('h1', {}, 'Tunnel'), h('p', { class: 'tagline' }, 'An open path to Arkiv.')),
+    ),
     connectionPanel(),
+  ),
+  h('div', { class: 'intro' },
+    h('div', {},
+      h('p', { class: 'eyebrow' }, 'THE PUBLIC NOTICE BOARD'),
+      h('h2', {}, 'Stay connected. Even offline.'),
+      h('p', { class: 'intro-copy' }, 'Read, share, and verify notices across network boundaries. Your keys stay with you, wherever your message goes.'),
+    ),
+    h('div', { class: 'intro-note' }, h('span', { class: 'network-label' }, 'Tiramisu testnet'), h('span', {}, 'Demo workspace'), h('small', {}, 'Synthetic notices only')),
   ),
   nav,
   main,
@@ -93,3 +109,6 @@ document.querySelector('#app')!.replaceChildren(
   ),
 )
 show(location.hash.slice(1))
+addEventListener('hashchange', () => {
+  if (location.hash !== '#workspace') show(location.hash.slice(1))
+})
