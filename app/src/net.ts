@@ -13,8 +13,17 @@ export const APP = 'tunnel-demo'
 export const DISTRICTS = ['central', 'north', 'south', 'east', 'west'] as const
 
 const env = import.meta.env
-const DEFAULT_RELAYS = (env.VITE_RELAYS ?? 'http://127.0.0.1:8787,http://127.0.0.1:8788').split(',').map((s: string) => s.trim()).filter(Boolean)
-export const LIAR_RELAY: string | undefined = env.VITE_LIAR_RELAY || (env.DEV ? 'http://127.0.0.1:8789' : undefined)
+/** Deployed relays: Cloudflare Workers + Vercel Edge (same origin as this app). Override with VITE_RELAYS. */
+const PROD_RELAYS = 'https://tunnel-relay.tunnel-relay.workers.dev,/api/rpc'
+const DEV_RELAYS = 'http://127.0.0.1:8787,http://127.0.0.1:8788'
+const absolute = (u: string) => new URL(u, location.href).href.replace(/\/$/, '')
+const DEFAULT_RELAYS = (env.VITE_RELAYS ?? (env.DEV ? DEV_RELAYS : PROD_RELAYS))
+  .split(',')
+  .map((s: string) => s.trim())
+  .filter(Boolean)
+  .map(absolute)
+export const LIAR_RELAY: string | undefined =
+  env.VITE_LIAR_RELAY || (env.DEV ? 'http://127.0.0.1:8789' : 'https://tunnel-relay-liar.tunnel-relay.workers.dev')
 
 export const settings = store('tunnel.settings', {
   relays: DEFAULT_RELAYS as string[],

@@ -32,6 +32,14 @@ A relay is a ~100-line stateless JSON-RPC forwarder ([relay/src/core.ts](relay/s
 It cannot forge writes (transactions are signed on the user's device) and cannot forge reads
 without being caught (clients compare several relays at the same pinned block).
 
+### Deployed relays
+
+| Relay | Platform | Health |
+|---|---|---|
+| `https://tunnel-relay.tunnel-relay.workers.dev` | Cloudflare Workers | [/health](https://tunnel-relay.tunnel-relay.workers.dev/health) |
+| `https://<app>.vercel.app/api/rpc` | Vercel Edge Function ([api/rpc.ts](api/rpc.ts)) | `GET /api/rpc` |
+| `https://tunnel-relay-liar.tunnel-relay.workers.dev` | Cloudflare Workers, **deliberately lying (`LIE=1`), demo only** | [/health](https://tunnel-relay-liar.tunnel-relay.workers.dev/health) |
+
 ### Run locally
 
 ```sh
@@ -48,7 +56,13 @@ cd relay
 npx wrangler login
 npx wrangler secret put ARKIV_API_KEY     # optional, from https://hub.arkiv.network/api-keys
 npx wrangler deploy                       # prints https://tunnel-relay.<you>.workers.dev
+# demo liar (optional): npx wrangler deploy --name tunnel-relay-liar --var LIE:1
 ```
+
+### Deploy to Vercel (app + second relay)
+
+Import the repo in Vercel (root directory = repo root; `vercel.json` sets the build), and add the
+env var `ARKIV_API_KEY` (optional). The static app is served from `app/dist`, and the relay at `/api/rpc`.
 
 ## On-chain evidence (Tiramisu, chain 7738577)
 
